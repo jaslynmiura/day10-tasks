@@ -1,0 +1,126 @@
+---
+title: "Lakes"
+author: "Jaslyn Miura"
+format: html
+warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#| include: false
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(lubridate)
+
+```
+
+```{r}
+# part 1
+weather <- read_csv(here("data", "ntl20_v6.csv"))
+ice <- read_csv(here("data", "ntl33_v7.csv"),
+                na = c("-999"))
+
+```
+
+```{r}
+# part 2
+
+ggplot(data = ice, 
+       aes(x = lakeid, y = ice_duration)) +
+  geom_jitter() +
+  labs(title = "Ice duration at Madison Lake Area",
+       x = "Site",
+       y = "Number of days frozen") + 
+  geom_boxplot(alpha = .3, color = "violet")
+
+```
+
+
+```{r}
+# part 3
+
+mean_ice_cover <- ice %>% 
+  drop_na(ice_duration) %>% 
+  group_by(year4) %>% 
+  summarise(mean_ice = mean(ice_duration, na.rm = TRUE))
+
+mean_ice_cover
+
+```
+
+```{r}
+#| fig-cap: "There is a decreasing trend in the mean number of days the lakes are frozen in the Madison Lake Area as the years increase."
+
+
+# part 4
+
+ggplot(data = mean_ice_cover,
+       aes(x = year4, y = mean_ice)) +
+  geom_jitter() +
+  labs(title = "Mean ice duration at Madison Lake Area by Year",
+       x = "Year",
+       y = "Mean number of frozen days")
+
+```
+
+```{r}
+# part 5
+
+mean_air_temp <- weather %>% 
+  filter(month %in% c(1, 2, 12)) %>% 
+  group_by(year4, month) %>% 
+  summarise(mean_temp = mean(ave_air_temp_adjusted, na.rm = TRUE)) %>% 
+  mutate(month = as.character(month))
+
+```
+
+```{r}
+#| fig-cap: "As the year increases, the average mean temperature increases."
+
+# part 6
+
+ggplot(data = mean_air_temp,
+       aes(x = year4, y = mean_temp, color = month)) + 
+  geom_jitter() +
+  labs(title = "Average winter temperatures in the Madison Lake Area",
+       x = "Year",
+       y = "Average temperature",
+       color = "Month")
+
+```
+
+```{r}
+
+# part 7
+
+lake_join <- mean_ice_cover %>% 
+  full_join(mean_air_temp)
+
+ggplot(data = lake_join, 
+       aes(x = mean_temp, y = mean_ice)) +
+  geom_point() +
+  labs(title = "Mean ice cover duration based on mean temperature",
+       x = "Mean temperature",
+       y = "Mean ice cover duration")
+
+```
+
+```{r}
+
+doy_ice <- ice %>% 
+  filter(year4 > 1970) %>%
+  mutate(date = lubridate::ymd(ice_off)) %>% 
+  mutate(date = lubridate::yday(date))
+
+ggplot(data = doy_ice,
+       aes(x = date, y = ice_duration)) +
+  geom_jitter() +
+  labs(title = "Mean ice cover duration based on the day of the year",
+       x = "Day of the year",
+       y = "Ice cover duration")
+
+```
+
